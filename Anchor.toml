@@ -1,0 +1,25 @@
+[toolchain]
+
+[features]
+seeds = false
+skip-lint = false
+
+[programs.localnet]
+fnet = "F1d8Vakzdfzqdk2BAnGm2MvE5bQeXGTzrRWYwEBn8QKc"
+
+[programs.devnet]
+fnet = "CyRCQokSXZ9iuZemxjJVDnF4FDdbTRoQ313EyzxDCqKz"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "Devnet"
+wallet = "/home/vboxuser/.config/solana/id.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+
+[test.validator]
+ticks_per_slot = 2
+slots_per_epoch = "64"
