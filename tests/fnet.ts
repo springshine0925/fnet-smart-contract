@@ -12,17 +12,15 @@ describe("fnet", () => {
   // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
-
   const owner = provider.wallet as NodeWallet;
-
   const program = anchor.workspace.Fnet as Program<Fnet>;
-
   const connection = provider.connection;
-
   const mint = Keypair.generate();
 
   let currencyMint: PublicKey;
-  let currencyTokenAccount: PublicKey;
+
+  let currencyTokenAccount: PublicKey; // me
+  let ownerTokenAccount: PublicKey;   // me
 
   const appState = PublicKey.findProgramAddressSync(
     [
@@ -32,11 +30,12 @@ describe("fnet", () => {
     program.programId
   )[0];
 
-  
-
   const founderToken = Keypair.generate();
 
+  let oneYearToken: PublicKey;
   let sixYearToken: PublicKey;
+  let ownerToken: PublicKey;  // me
+  let firstRoundToken: PublicKey //me
 
   const firstRound = PublicKey.findProgramAddressSync(
     [
@@ -71,13 +70,13 @@ describe("fnet", () => {
     program.programId
   )[0];
 
-  // const currencyPot = PublicKey.findProgramAddressSync(
-  //   [
-  //     anchor.utils.bytes.utf8.encode("currency-pot"),
-  //     currencyMint.toBuffer()
-  //   ],
-  //   program.programId
-  // )[0];
+  const currencyPot = PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode("currency-pot"),
+      currencyMint.toBuffer()
+    ],
+    program.programId
+  )[0];
 
   const [authority, bump] = PublicKey.findProgramAddressSync(
     [
@@ -86,15 +85,13 @@ describe("fnet", () => {
     ],
     program.programId
   );
-  
+  /// Mint Tokens by founder
   it("mint founder", async () => {
     // Add your test here.
     const decimals = 6
     const feeBasisPoints = 0
     const maxFee = BigInt(0)
-
     
-
     await createMintWithTransferFee(
       connection,
       owner.payer,
@@ -126,7 +123,7 @@ describe("fnet", () => {
       undefined,
       TOKEN_2022_PROGRAM_ID
     );
-    console.log(account.amount.toString());
+    console.log("account.amount::",account.amount.toString());
     console.log("mint => ", mint.publicKey.toBase58());
     currencyMint = await createMint(
       connection,
@@ -135,7 +132,7 @@ describe("fnet", () => {
       undefined,
       9
     );
-  
+    console.log("currencyToken Mint::",currencyMint)
     const currencyAccount = await getOrCreateAssociatedTokenAccount(
       connection,
       owner.payer,
@@ -143,7 +140,9 @@ describe("fnet", () => {
       owner.publicKey
     );
     currencyTokenAccount = currencyAccount.address;
+    console.log("currencyTokenAccount::", currencyTokenAccount);
   });
+
   it("mint one year", async () => {
     const oneYearToken = Keypair.generate();
     const tx = await program.methods.mintOneYear().accounts({
@@ -189,25 +188,27 @@ describe("fnet", () => {
     );
     console.log(account.amount.toString());
   });
-  // it("unlock", async () => {
-  //   const tokenAccount = await createAccount(
-  //     connection,
-  //     owner.payer,
-  //     mint.publicKey,
-  //     owner.publicKey,
-  //     undefined,
-  //     undefined,
-  //     TOKEN_2022_PROGRAM_ID
-  //   );
-  //   const tx = await program.methods.unlockSixYear().accounts({
-  //     mint: mint.publicKey,
-  //     appState,
-  //     sixYearToken,
-  //     tokenAccount,
-  //     tokenProgram: TOKEN_2022_PROGRAM_ID,
-  //   }).rpc();
-  //   console.log(tx);
-  // });
+  ///////// me
+  it("unlock", async () => {
+    const tokenAccount = await createAccount(
+      connection,
+      owner.payer,
+      mint.publicKey,
+      owner.publicKey,
+      undefined,
+      undefined,
+      TOKEN_2022_PROGRAM_ID
+    );
+    const tx = await program.methods.unlockSixYear().accounts({
+      mint: mint.publicKey,
+      appState,
+      sixYearToken,
+      tokenAccount,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
+    }).rpc();
+    console.log(tx);
+  });
+  //////// me
   it("create first round", async () => {
     const startTime = Math.floor(Date.now() / 1000);
     const endTime = startTime + 2;
@@ -233,53 +234,58 @@ describe("fnet", () => {
     console.log(account.amount.toString())
     console.log(tx);
   });
-  // it("buy in first round", async () => {
-  //   const tx = await program.methods.buyInFirstRound(new BN(10 * ( 10 ** 9))).accounts({
-  //     firstRound,
-  //     appState,
-  //     buyer,
-  //     mint: mint.publicKey,
-  //     currencyMint,
-  //     userCurrencyAccount: currencyAccount.address,
-  //     currencyPot
-  //   }).rpc();
-  //   console.log(tx);
-  // })
-  // it ("finalize first round", async () => {
-  //   const tx = await program.methods.finalizeFirstRound().accounts({
-  //     appState,
-  //     mint: mint.publicKey,
-  //     authority,
-  //     firstRoundToken,
-  //     firstRound
-  //   }).rpc();
-  //   console.log(tx);
-  // })
+  ////// me 
+  it("buy in first round", async () => {
+    // const userCurrencyAccount = Keypair.generate()
+    const tx = await program.methods.buyInFirstRound(new BN(10 * ( 10 ** 9))).accounts({
+      firstRound,
+      appState,
+      buyer,
+      mint: mint.publicKey,
+      currencyMint,
+      // userCurrencyAccount,
+      currencyPot
+    }).rpc();
+    console.log(tx);
+  })
+  //// me
+  it ("finalize first round", async () => {
+    const tx = await program.methods.finalizeFirstRound().accounts({
+      appState,
+      mint: mint.publicKey,
+      authority,
+      firstRoundToken,
+      firstRound,
+      tokenProgram: TOKEN_2022_PROGRAM_ID 
+    }).rpc();
+    console.log(tx);
+  })
+////// me
+  it('mints tokens by the owner', async () => {
+    const amountToMint = 1000000;  // The amount of tokens to mint
+    
+  
+    // Invoke the `mint_by_owner` handler
+    const tx = await program.methods.mintByOwner(new BN(amountToMint)).accounts({
+        owner: owner.publicKey,
+        appState,
+        authority,
+        mint: mint.publicKey,
+        ownerTokenAccount,
+        tokenProgram: TOKEN_2022_PROGRAM_ID
+    }).signers([owner.payer]).rpc();
 
-//   it('mints tokens by the owner', async () => {
-//     const amountToMint = 1000000;  // The amount of tokens to mint
+    console.log('Transaction signature:', tx);
 
-//     // Invoke the `mint_by_owner` handler
-//     const tx = await program.methods.mintByOwner(new BN(amountToMint)).accounts({
-//         owner: owner.publicKey,
-//         appState: appState,
-//         authority: authority[0],
-//         mint: mint.publicKey,
-//         ownerTokenAccount: ownerTokenAccount,
-//         tokenProgram: TOKEN_2022_PROGRAM_ID
-//     }).signers([owner.payer]).rpc();
+    // Fetch the token account to confirm the mint
+    const accountInfo = await getAccount(
+        connection,
+        ownerTokenAccount,
+        undefined,
+        TOKEN_2022_PROGRAM_ID
+    );
 
-//     console.log('Transaction signature:', tx);
-
-//     // Fetch the token account to confirm the mint
-//     const accountInfo = await getAccount(
-//         connection,
-//         ownerTokenAccount,
-//         undefined,
-//         TOKEN_2022_PROGRAM_ID
-//     );
-
-//     expect(Number(accountInfo.amount)).to.equal(amountToMint);
-//     console.log('Minted amount:', accountInfo.amount.toString());
-// });
+    // expect(Number(accountInfo.amount)).to.equal(amountToMint);
+    console.log('Minted amount:', accountInfo.amount.toString());
+});
 });
