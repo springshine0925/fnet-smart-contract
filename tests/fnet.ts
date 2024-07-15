@@ -191,6 +191,7 @@ describe("fnet", () => {
     );
     console.log(account.amount.toString());
   });
+  // unlock six year 
   // it("unlock", async () => {
   //   const tokenAccount = await createAccount(
   //     connection,
@@ -201,20 +202,47 @@ describe("fnet", () => {
   //     undefined,
   //     TOKEN_2022_PROGRAM_ID
   //   );
+
+  //   const sixYearState = PublicKey.findProgramAddressSync(
+  //     [
+  //       anchor.utils.bytes.utf8.encode("six-year"),
+  //       mint.publicKey.toBuffer()
+  //     ],
+  //     program.programId
+  //   )[0];
+
   //   const tx = await program.methods.unlockSixYear().accounts({
   //     mint: mint.publicKey,
   //     appState,
   //     sixYearToken,
   //     tokenAccount,
+  //     sixYearState,
   //     tokenProgram: TOKEN_2022_PROGRAM_ID,
   //   }).rpc();
   //   console.log(tx);
   // });
   it("create first round", async () => {
+    console.log("-------------------create first round function is started----------")
     const startTime = Math.floor(Date.now() / 1000);
     const endTime = startTime + 2;
+    console.log(startTime, endTime);
     const firstRoundToken = Keypair.generate();
-    console.log('firstRoundToken::', firstRoundToken)
+    currencyMint = await createMint(
+      connection,
+      owner.payer,
+      owner.publicKey,
+      undefined,
+      9
+    );
+    const currencyPot = PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode("currency-pot"),
+      currencyMint.toBuffer()
+    ],
+    program.programId
+  )[0];
+
+    console.log('firstRoundToken =>', firstRoundToken)
     const tx = await program.methods.createFirstRound(
       new BN(startTime),
       new BN(endTime),
@@ -233,23 +261,33 @@ describe("fnet", () => {
       undefined,
       TOKEN_2022_PROGRAM_ID
     );
-    console.log('first account round account::', account)
+    console.log('first account round account =>', account)
     console.log(account.amount.toString())
     console.log(tx);
   });
   // it("buy in first round", async () => {
-  //   const tx = await program.methods.buyInFirstRound(new BN(10 * ( 10 ** 9))).accounts({
+  //   console.log('--------------buy in first round -------------');
+  //   const currencyPot = PublicKey.findProgramAddressSync(
+  //     [
+  //       anchor.utils.bytes.utf8.encode("currency-pot"),
+  //       currencyMint.toBuffer()
+  //     ],
+  //     program.programId
+  //   )[0];
+  //   const dallar_amount = 100;
+  //   const tx = await program.methods.buyInFirstRound(new BN(dallar_amount)).accounts({
   //     firstRound,
   //     appState,
   //     buyer,
   //     mint: mint.publicKey,
   //     currencyMint,
-  //     userCurrencyAccount: currencyAccount.address,
+  //     // userCurrencyAccount: currencyAccount.address,
   //     currencyPot
   //   }).rpc();
   //   console.log(tx);
   // })
   // it ("finalize first round", async () => {
+  //   const firstRoundToken = "";
   //   const tx = await program.methods.finalizeFirstRound().accounts({
   //     appState,
   //     mint: mint.publicKey,
